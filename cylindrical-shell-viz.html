@@ -6,46 +6,58 @@
     <title>Cylindrical Shell Volume Element - dV Visualization</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
         body {
-            font-family: 'Segoe UI', sans-serif;
+            font-family: 'Segoe UI', Arial, sans-serif;
             background: #1a1a2e;
             color: #eee;
-            overflow: hidden;
-            height: 100vh;
         }
         #container {
             display: flex;
             height: 100vh;
+            width: 100vw;
         }
         #canvas-wrapper {
             flex: 1;
             position: relative;
+            min-width: 0;
+            background: #0a0a1e;
         }
-        canvas { display: block; }
+        #canvas-wrapper canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
+        }
         #info-panel {
-            width: 360px;
+            width: 340px;
+            flex-shrink: 0;
             background: #16213e;
-            padding: 24px;
+            padding: 20px;
             overflow-y: auto;
             border-left: 2px solid #0f3460;
         }
+        @media (max-width: 768px) {
+            #container { flex-direction: column; }
+            #info-panel { width: 100%; max-height: 45vh; }
+            #canvas-wrapper { height: 55vh; }
+        }
         h1 {
-            font-size: 1.3em;
+            font-size: 1.2em;
             color: #4fc3f7;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
         }
         h2 {
-            font-size: 1em;
+            font-size: 0.95em;
             color: #81d4fa;
-            margin: 20px 0 10px;
+            margin: 16px 0 8px;
         }
         .formula {
             background: #0f3460;
             border-radius: 8px;
-            padding: 14px;
+            padding: 12px;
             margin: 10px 0;
             font-family: 'Courier New', monospace;
-            font-size: 1.1em;
+            font-size: 1.05em;
             text-align: center;
             color: #fff;
             border: 1px solid #4fc3f7;
@@ -53,10 +65,11 @@
         .label-box {
             display: flex;
             align-items: center;
-            margin: 8px 0;
-            padding: 8px 12px;
+            margin: 6px 0;
+            padding: 6px 10px;
             border-radius: 6px;
             background: #1a1a3e;
+            font-size: 0.9em;
         }
         .color-dot {
             width: 14px;
@@ -64,13 +77,12 @@
             border-radius: 50%;
             margin-right: 10px;
             flex-shrink: 0;
+            box-shadow: 0 0 6px currentColor;
         }
-        .slider-group {
-            margin: 12px 0;
-        }
+        .slider-group { margin: 10px 0; }
         .slider-group label {
             display: block;
-            font-size: 0.9em;
+            font-size: 0.88em;
             color: #aaa;
             margin-bottom: 4px;
         }
@@ -82,72 +94,97 @@
             font-size: 0.85em;
             color: #4fc3f7;
             float: right;
+            font-weight: bold;
         }
-        .explanation {
-            font-size: 0.88em;
-            color: #bbb;
-            line-height: 1.6;
-            margin-top: 14px;
-        }
-        .highlight { color: #ffab40; font-weight: bold; }
         .unroll-btn {
             display: block;
             width: 100%;
-            margin: 16px 0;
-            padding: 12px;
+            margin: 14px 0;
+            padding: 10px;
             background: #4fc3f7;
             color: #1a1a2e;
             border: none;
             border-radius: 8px;
-            font-size: 1em;
+            font-size: 0.95em;
             font-weight: bold;
             cursor: pointer;
-            transition: background 0.3s;
         }
         .unroll-btn:hover { background: #81d4fa; }
         #volume-calc {
             background: #0a1628;
             border-radius: 8px;
-            padding: 12px;
-            margin-top: 12px;
-            font-size: 0.85em;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 0.82em;
             line-height: 1.8;
+            font-family: 'Courier New', monospace;
+        }
+        #volume-calc strong { color: #ffab40; }
+        .explanation {
+            font-size: 0.82em;
+            color: #bbb;
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+        .highlight { color: #ffab40; font-weight: bold; }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #4fc3f7;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        #error-display {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            background: #ff5252;
+            color: white;
+            padding: 14px;
+            border-radius: 8px;
+            display: none;
+            font-size: 0.9em;
         }
     </style>
 </head>
 <body>
     <div id="container">
-        <div id="canvas-wrapper"></div>
+        <div id="canvas-wrapper">
+            <div id="loading">Loading 3D view...</div>
+            <div id="error-display"></div>
+        </div>
         <div id="info-panel">
-            <h1>Cylindrical Shell Element (dV)</h1>
-            
+            <h1>Cylindrical Shell (dV)</h1>
             <div class="formula">dV = 2&pi;r' &middot; dr' &middot; L</div>
 
-            <h2>What you're seeing:</h2>
+            <h2>Legend:</h2>
             <div class="label-box">
-                <div class="color-dot" style="background: #4fc3f7;"></div>
-                <span><strong>Blue shell</strong> = the thin element at radius r'</span>
+                <div class="color-dot" style="background: #4fc3f7; color: #4fc3f7;"></div>
+                <span><b>Blue shell</b> = element at r'</span>
             </div>
             <div class="label-box">
-                <div class="color-dot" style="background: #ff5252;"></div>
-                <span><strong>Red line</strong> = circumference = 2&pi;r'</span>
+                <div class="color-dot" style="background: #ff5252; color: #ff5252;"></div>
+                <span><b>Red</b> = circumference (2&pi;r')</span>
             </div>
             <div class="label-box">
-                <div class="color-dot" style="background: #69f0ae;"></div>
-                <span><strong>Green arrow</strong> = thickness = dr'</span>
+                <div class="color-dot" style="background: #69f0ae; color: #69f0ae;"></div>
+                <span><b>Green</b> = thickness (dr')</span>
             </div>
             <div class="label-box">
-                <div class="color-dot" style="background: #ffab40;"></div>
-                <span><strong>Orange line</strong> = length = L</span>
+                <div class="color-dot" style="background: #ffab40; color: #ffab40;"></div>
+                <span><b>Orange</b> = length (L)</span>
             </div>
 
-            <h2>Play with it:</h2>
+            <h2>Controls:</h2>
             <div class="slider-group">
                 <label>Radius r' <span class="slider-value" id="r-val">3.0</span></label>
                 <input type="range" id="radius-slider" min="0.5" max="5" step="0.1" value="3">
             </div>
             <div class="slider-group">
-                <label>Thickness dr' <span class="slider-value" id="dr-val">0.4</span></label>
+                <label>Thickness dr' <span class="slider-value" id="dr-val">0.40</span></label>
                 <input type="range" id="thickness-slider" min="0.1" max="1.5" step="0.05" value="0.4">
             </div>
             <div class="slider-group">
@@ -155,321 +192,300 @@
                 <input type="range" id="length-slider" min="1" max="7" step="0.1" value="4">
             </div>
 
-            <button class="unroll-btn" id="unroll-btn">Unroll the Shell (Paper Towel View)</button>
+            <button class="unroll-btn" id="unroll-btn">Unroll Shell (Paper-Towel View)</button>
 
             <div id="volume-calc">
-                <strong>Volume calculation:</strong><br>
-                Circumference = 2&pi;(<span id="calc-r">3.0</span>) = <span id="calc-circ">18.85</span><br>
-                &times; Thickness dr' = <span id="calc-dr">0.4</span><br>
-                &times; Length L = <span id="calc-l">4.0</span><br>
-                <hr style="border-color:#333; margin:6px 0;">
+                <strong>Volume:</strong><br>
+                2&pi;r' = 2&pi;(<span id="calc-r">3.0</span>) = <span id="calc-circ">18.85</span><br>
+                &times; dr' = <span id="calc-dr">0.40</span><br>
+                &times; L&nbsp;&nbsp; = <span id="calc-l">4.0</span><br>
+                <hr style="border-color:#333; margin:4px 0;">
                 <strong>dV = <span id="calc-dv">30.16</span></strong>
             </div>
 
             <div class="explanation">
-                <h2>Why r' matters:</h2>
-                <p>Try dragging the radius slider. Notice how the shell gets <span class="highlight">bigger</span> as r' increases — more circumference means more volume, even for the same thickness!</p>
-                <p style="margin-top:8px;">This is why you <strong>can't</strong> just use "average density &times; total volume" — outer shells contribute way more volume than inner ones.</p>
+                <p>Drag the radius slider. Notice the shell grows <span class="highlight">bigger</span> at larger r' — more circumference = more volume. That's why r' MUST appear in dV!</p>
+                <p style="margin-top:8px;">Drag in the 3D view to rotate. Scroll to zoom.</p>
             </div>
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Use matching versions from same CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
-        // Scene setup
         const wrapper = document.getElementById('canvas-wrapper');
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x1a1a2e);
+        const loading = document.getElementById('loading');
+        const errorDisplay = document.getElementById('error-display');
 
-        const camera = new THREE.PerspectiveCamera(50, wrapper.clientWidth / wrapper.clientHeight, 0.1, 100);
-        camera.position.set(8, 6, 8);
+        function showError(msg) {
+            errorDisplay.textContent = 'Error: ' + msg;
+            errorDisplay.style.display = 'block';
+            loading.style.display = 'none';
+        }
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
-        wrapper.appendChild(renderer.domElement);
-
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.8;
-
-        // Lighting
-        const ambient = new THREE.AmbientLight(0xffffff, 0.4);
-        scene.add(ambient);
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(5, 10, 5);
-        scene.add(dirLight);
-
-        // Grid and axis
-        const grid = new THREE.GridHelper(12, 12, 0x333366, 0x222244);
-        grid.position.y = -0.01;
-        scene.add(grid);
-
-        // Axis indicator
-        const axisLine = new THREE.Line(
-            new THREE.BufferGeometry().setFromPoints([
-                new THREE.Vector3(0, -4, 0),
-                new THREE.Vector3(0, 5, 0)
-            ]),
-            new THREE.LineBasicMaterial({ color: 0x666688, linewidth: 1 })
-        );
-        scene.add(axisLine);
-
-        // Shell group
-        let shellGroup = new THREE.Group();
-        scene.add(shellGroup);
-
-        // Unroll state
-        let isUnrolled = false;
-        let unrollProgress = 0;
-        let targetUnroll = 0;
-
-        // Parameters
-        let params = { r: 3, dr: 0.4, L: 4 };
-
-        function createShell() {
-            // Clear old
-            while (shellGroup.children.length > 0) {
-                const child = shellGroup.children[0];
-                if (child.geometry) child.geometry.dispose();
-                if (child.material) child.material.dispose();
-                shellGroup.remove(child);
+        try {
+            if (typeof THREE === 'undefined') {
+                showError('Three.js failed to load. Please check your internet connection.');
+                throw new Error('THREE undefined');
             }
 
-            const { r, dr, L } = params;
-            const segments = 64;
+            // --- Scene setup ---
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a0a1e);
 
-            if (!isUnrolled && unrollProgress < 0.01) {
-                // === CYLINDER VIEW ===
+            const getSize = () => ({
+                w: wrapper.clientWidth || window.innerWidth - 340,
+                h: wrapper.clientHeight || window.innerHeight
+            });
 
-                // Outer shell (transparent blue)
-                const shellGeo = new THREE.CylinderGeometry(r + dr/2, r + dr/2, L, segments, 1, true);
-                const shellMat = new THREE.MeshPhongMaterial({
-                    color: 0x4fc3f7,
-                    transparent: true,
-                    opacity: 0.35,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                });
-                const shell = new THREE.Mesh(shellGeo, shellMat);
-                shellGroup.add(shell);
+            let { w, h } = getSize();
+            const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 100);
+            camera.position.set(9, 6, 9);
+            camera.lookAt(0, 0, 0);
 
-                // Inner shell
-                const innerGeo = new THREE.CylinderGeometry(r - dr/2, r - dr/2, L, segments, 1, true);
-                const innerMat = new THREE.MeshPhongMaterial({
-                    color: 0x4fc3f7,
-                    transparent: true,
-                    opacity: 0.2,
-                    side: THREE.DoubleSide,
-                    depthWrite: false
-                });
-                const inner = new THREE.Mesh(innerGeo, innerMat);
-                shellGroup.add(inner);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(w, h);
+            wrapper.appendChild(renderer.domElement);
+            loading.style.display = 'none';
 
-                // Top and bottom rings
-                const ringGeo = new THREE.RingGeometry(r - dr/2, r + dr/2, segments);
-                const ringMat = new THREE.MeshPhongMaterial({
-                    color: 0x4fc3f7,
-                    transparent: true,
-                    opacity: 0.5,
-                    side: THREE.DoubleSide
-                });
-                const topRing = new THREE.Mesh(ringGeo, ringMat);
-                topRing.rotation.x = -Math.PI / 2;
-                topRing.position.y = L / 2;
-                shellGroup.add(topRing);
+            // --- Controls ---
+            let controls = null;
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.autoRotate = true;
+                controls.autoRotateSpeed = 0.6;
+            }
 
-                const bottomRing = topRing.clone();
-                bottomRing.position.y = -L / 2;
-                shellGroup.add(bottomRing);
+            // --- Lights ---
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const dir1 = new THREE.DirectionalLight(0xffffff, 0.7);
+            dir1.position.set(5, 10, 5);
+            scene.add(dir1);
+            const dir2 = new THREE.DirectionalLight(0x8888ff, 0.4);
+            dir2.position.set(-5, -3, -5);
+            scene.add(dir2);
 
-                // Circumference line (red) at top
-                const circlePoints = [];
-                for (let i = 0; i <= segments; i++) {
-                    const theta = (i / segments) * 2 * Math.PI;
-                    circlePoints.push(new THREE.Vector3(r * Math.cos(theta), L/2 + 0.05, r * Math.sin(theta)));
+            // --- Grid + axis ---
+            const grid = new THREE.GridHelper(14, 14, 0x335577, 0x223355);
+            grid.position.y = -4;
+            scene.add(grid);
+
+            const axisGeo = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(0, -4.5, 0),
+                new THREE.Vector3(0, 5.5, 0)
+            ]);
+            scene.add(new THREE.Line(axisGeo, new THREE.LineBasicMaterial({ color: 0x8899bb })));
+
+            // --- Shell group ---
+            const shellGroup = new THREE.Group();
+            scene.add(shellGroup);
+
+            let params = { r: 3, dr: 0.4, L: 4 };
+            let isUnrolled = false;
+
+            function disposeChildren(group) {
+                while (group.children.length > 0) {
+                    const c = group.children[0];
+                    if (c.geometry) c.geometry.dispose();
+                    if (c.material) {
+                        if (Array.isArray(c.material)) c.material.forEach(m => m.dispose());
+                        else c.material.dispose();
+                    }
+                    group.remove(c);
                 }
-                const circleGeo = new THREE.BufferGeometry().setFromPoints(circlePoints);
-                const circleMat = new THREE.LineBasicMaterial({ color: 0xff5252, linewidth: 3 });
-                const circle = new THREE.Line(circleGeo, circleMat);
-                shellGroup.add(circle);
-
-                // Thickness arrow (green) - radial
-                const arrowStart = new THREE.Vector3(r - dr/2, L/2 + 0.3, 0);
-                const arrowEnd = new THREE.Vector3(r + dr/2, L/2 + 0.3, 0);
-                const arrowGeo = new THREE.BufferGeometry().setFromPoints([arrowStart, arrowEnd]);
-                const arrowMat = new THREE.LineBasicMaterial({ color: 0x69f0ae, linewidth: 3 });
-                const arrow = new THREE.Line(arrowGeo, arrowMat);
-                shellGroup.add(arrow);
-
-                // Arrow heads for thickness
-                const headSize = 0.15;
-                const headGeo1 = new THREE.BufferGeometry().setFromPoints([
-                    arrowEnd,
-                    new THREE.Vector3(arrowEnd.x - headSize, arrowEnd.y + headSize/2, 0),
-                    new THREE.Vector3(arrowEnd.x - headSize, arrowEnd.y - headSize/2, 0),
-                    arrowEnd
-                ]);
-                const head1 = new THREE.Line(headGeo1, arrowMat);
-                shellGroup.add(head1);
-
-                // Length line (orange) - vertical
-                const lengthStart = new THREE.Vector3(r + dr/2 + 0.3, -L/2, 0);
-                const lengthEnd = new THREE.Vector3(r + dr/2 + 0.3, L/2, 0);
-                const lengthGeo = new THREE.BufferGeometry().setFromPoints([lengthStart, lengthEnd]);
-                const lengthMat = new THREE.LineBasicMaterial({ color: 0xffab40, linewidth: 3 });
-                const lengthLine = new THREE.Line(lengthGeo, lengthMat);
-                shellGroup.add(lengthLine);
-
-                // Length arrow heads
-                const lHead1Geo = new THREE.BufferGeometry().setFromPoints([
-                    lengthEnd,
-                    new THREE.Vector3(lengthEnd.x - headSize/2, lengthEnd.y - headSize, 0),
-                    new THREE.Vector3(lengthEnd.x + headSize/2, lengthEnd.y - headSize, 0),
-                    lengthEnd
-                ]);
-                const lHead1 = new THREE.Line(lHead1Geo, lengthMat);
-                shellGroup.add(lHead1);
-
-                const lHead2Geo = new THREE.BufferGeometry().setFromPoints([
-                    lengthStart,
-                    new THREE.Vector3(lengthStart.x - headSize/2, lengthStart.y + headSize, 0),
-                    new THREE.Vector3(lengthStart.x + headSize/2, lengthStart.y + headSize, 0),
-                    lengthStart
-                ]);
-                const lHead2 = new THREE.Line(lHead2Geo, lengthMat);
-                shellGroup.add(lHead2);
-
-                // Radius line from center
-                const radGeo = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(0, -L/2 - 0.3, 0),
-                    new THREE.Vector3(r, -L/2 - 0.3, 0)
-                ]);
-                const radMat = new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.2, gapSize: 0.1 });
-                const radLine = new THREE.Line(radGeo, radMat);
-                radLine.computeLineDistances();
-                shellGroup.add(radLine);
-
-            } else {
-                // === UNROLLED VIEW (rectangle) ===
-                const t = unrollProgress;
-                const circ = 2 * Math.PI * r;
-                
-                // Show as a flat rectangle
-                const rectGeo = new THREE.PlaneGeometry(circ, L);
-                const rectMat = new THREE.MeshPhongMaterial({
-                    color: 0x4fc3f7,
-                    transparent: true,
-                    opacity: 0.5,
-                    side: THREE.DoubleSide
-                });
-                const rect = new THREE.Mesh(rectGeo, rectMat);
-                rect.position.y = 0;
-                shellGroup.add(rect);
-
-                // Outline
-                const outlinePoints = [
-                    new THREE.Vector3(-circ/2, -L/2, 0),
-                    new THREE.Vector3(circ/2, -L/2, 0),
-                    new THREE.Vector3(circ/2, L/2, 0),
-                    new THREE.Vector3(-circ/2, L/2, 0),
-                    new THREE.Vector3(-circ/2, -L/2, 0)
-                ];
-                const outlineGeo = new THREE.BufferGeometry().setFromPoints(outlinePoints);
-                const outlineMat = new THREE.LineBasicMaterial({ color: 0xffffff });
-                const outline = new THREE.Line(outlineGeo, outlineMat);
-                shellGroup.add(outline);
-
-                // Width label (circumference - red)
-                const widthGeo = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(-circ/2, -L/2 - 0.4, 0),
-                    new THREE.Vector3(circ/2, -L/2 - 0.4, 0)
-                ]);
-                const widthLine = new THREE.Line(widthGeo, new THREE.LineBasicMaterial({ color: 0xff5252 }));
-                shellGroup.add(widthLine);
-
-                // Height label (L - orange)
-                const hGeo = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(circ/2 + 0.4, -L/2, 0),
-                    new THREE.Vector3(circ/2 + 0.4, L/2, 0)
-                ]);
-                const hLine = new THREE.Line(hGeo, new THREE.LineBasicMaterial({ color: 0xffab40 }));
-                shellGroup.add(hLine);
-
-                // Thickness indicator (green) - depth into screen
-                const depthArrow = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(0, 0, dr * 3) // exaggerated for visibility
-                ]);
-                const depthLine = new THREE.Line(depthArrow, new THREE.LineBasicMaterial({ color: 0x69f0ae }));
-                shellGroup.add(depthLine);
             }
-        }
 
-        function updateCalc() {
-            const { r, dr, L } = params;
-            const circ = 2 * Math.PI * r;
-            const dv = circ * dr * L;
+            function createShell() {
+                disposeChildren(shellGroup);
+                const { r, dr, L } = params;
+                const segments = 64;
 
-            document.getElementById('r-val').textContent = r.toFixed(1);
-            document.getElementById('dr-val').textContent = dr.toFixed(2);
-            document.getElementById('l-val').textContent = L.toFixed(1);
-            document.getElementById('calc-r').textContent = r.toFixed(1);
-            document.getElementById('calc-circ').textContent = circ.toFixed(2);
-            document.getElementById('calc-dr').textContent = dr.toFixed(2);
-            document.getElementById('calc-l').textContent = L.toFixed(1);
-            document.getElementById('calc-dv').textContent = dv.toFixed(2);
-        }
+                if (!isUnrolled) {
+                    // ===== CYLINDER VIEW =====
 
-        // Sliders
-        document.getElementById('radius-slider').addEventListener('input', (e) => {
-            params.r = parseFloat(e.target.value);
+                    // Outer surface
+                    const outerGeo = new THREE.CylinderGeometry(r + dr/2, r + dr/2, L, segments, 1, true);
+                    const shellMat = new THREE.MeshPhongMaterial({
+                        color: 0x4fc3f7, transparent: true, opacity: 0.4,
+                        side: THREE.DoubleSide, shininess: 50
+                    });
+                    shellGroup.add(new THREE.Mesh(outerGeo, shellMat));
+
+                    // Inner surface
+                    const innerGeo = new THREE.CylinderGeometry(r - dr/2, r - dr/2, L, segments, 1, true);
+                    shellGroup.add(new THREE.Mesh(innerGeo, shellMat.clone()));
+
+                    // Top + bottom rings (caps)
+                    const ringGeo = new THREE.RingGeometry(Math.max(0.001, r - dr/2), r + dr/2, segments);
+                    const ringMat = new THREE.MeshPhongMaterial({
+                        color: 0x4fc3f7, transparent: true, opacity: 0.6,
+                        side: THREE.DoubleSide
+                    });
+                    const topRing = new THREE.Mesh(ringGeo, ringMat);
+                    topRing.rotation.x = -Math.PI / 2;
+                    topRing.position.y = L / 2;
+                    shellGroup.add(topRing);
+
+                    const botRing = topRing.clone();
+                    botRing.position.y = -L / 2;
+                    shellGroup.add(botRing);
+
+                    // Circumference line (RED) on top
+                    const circPts = [];
+                    for (let i = 0; i <= segments; i++) {
+                        const t = (i / segments) * 2 * Math.PI;
+                        circPts.push(new THREE.Vector3(r * Math.cos(t), L/2 + 0.05, r * Math.sin(t)));
+                    }
+                    const circGeo = new THREE.BufferGeometry().setFromPoints(circPts);
+                    shellGroup.add(new THREE.Line(circGeo, new THREE.LineBasicMaterial({ color: 0xff5252 })));
+
+                    // Thickness arrow (GREEN) - radial outward
+                    const thickPts = [
+                        new THREE.Vector3(r - dr/2, L/2 + 0.35, 0),
+                        new THREE.Vector3(r + dr/2, L/2 + 0.35, 0)
+                    ];
+                    const thickGeo = new THREE.BufferGeometry().setFromPoints(thickPts);
+                    shellGroup.add(new THREE.Line(thickGeo, new THREE.LineBasicMaterial({ color: 0x69f0ae })));
+
+                    // Thickness arrow-head cones
+                    const headMat = new THREE.MeshBasicMaterial({ color: 0x69f0ae });
+                    const headGeo = new THREE.ConeGeometry(0.08, 0.18, 8);
+                    const headR = new THREE.Mesh(headGeo, headMat);
+                    headR.position.set(r + dr/2 + 0.05, L/2 + 0.35, 0);
+                    headR.rotation.z = -Math.PI/2;
+                    shellGroup.add(headR);
+
+                    // Length line (ORANGE) - vertical
+                    const lenX = r + dr/2 + 0.5;
+                    const lenPts = [
+                        new THREE.Vector3(lenX, -L/2, 0),
+                        new THREE.Vector3(lenX, L/2, 0)
+                    ];
+                    const lenGeo = new THREE.BufferGeometry().setFromPoints(lenPts);
+                    shellGroup.add(new THREE.Line(lenGeo, new THREE.LineBasicMaterial({ color: 0xffab40 })));
+
+                    // Length arrow heads
+                    const orangeMat = new THREE.MeshBasicMaterial({ color: 0xffab40 });
+                    const topH = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.2, 8), orangeMat);
+                    topH.position.set(lenX, L/2 + 0.05, 0);
+                    shellGroup.add(topH);
+                    const botH = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.2, 8), orangeMat);
+                    botH.position.set(lenX, -L/2 - 0.05, 0);
+                    botH.rotation.z = Math.PI;
+                    shellGroup.add(botH);
+
+                    // Radius dashed line (white)
+                    const radPts = [
+                        new THREE.Vector3(0, -L/2 - 0.5, 0),
+                        new THREE.Vector3(r, -L/2 - 0.5, 0)
+                    ];
+                    const radGeo = new THREE.BufferGeometry().setFromPoints(radPts);
+                    const radLine = new THREE.Line(radGeo, new THREE.LineDashedMaterial({
+                        color: 0xffffff, dashSize: 0.25, gapSize: 0.15
+                    }));
+                    radLine.computeLineDistances();
+                    shellGroup.add(radLine);
+
+                } else {
+                    // ===== UNROLLED FLAT RECTANGLE =====
+                    const circ = 2 * Math.PI * r;
+
+                    // The rectangle
+                    const rectGeo = new THREE.BoxGeometry(circ, L, dr);
+                    const rectMat = new THREE.MeshPhongMaterial({
+                        color: 0x4fc3f7, transparent: true, opacity: 0.55
+                    });
+                    const rect = new THREE.Mesh(rectGeo, rectMat);
+                    shellGroup.add(rect);
+
+                    // Circumference edge (RED)
+                    const cEdgePts = [
+                        new THREE.Vector3(-circ/2, L/2 + 0.4, 0),
+                        new THREE.Vector3(circ/2, L/2 + 0.4, 0)
+                    ];
+                    shellGroup.add(new THREE.Line(
+                        new THREE.BufferGeometry().setFromPoints(cEdgePts),
+                        new THREE.LineBasicMaterial({ color: 0xff5252 })
+                    ));
+
+                    // Length edge (ORANGE)
+                    const lEdgePts = [
+                        new THREE.Vector3(circ/2 + 0.4, -L/2, 0),
+                        new THREE.Vector3(circ/2 + 0.4, L/2, 0)
+                    ];
+                    shellGroup.add(new THREE.Line(
+                        new THREE.BufferGeometry().setFromPoints(lEdgePts),
+                        new THREE.LineBasicMaterial({ color: 0xffab40 })
+                    ));
+
+                    // Thickness edge (GREEN)
+                    const tEdgePts = [
+                        new THREE.Vector3(-circ/2 - 0.4, -L/2, -dr/2),
+                        new THREE.Vector3(-circ/2 - 0.4, -L/2, dr/2)
+                    ];
+                    shellGroup.add(new THREE.Line(
+                        new THREE.BufferGeometry().setFromPoints(tEdgePts),
+                        new THREE.LineBasicMaterial({ color: 0x69f0ae })
+                    ));
+                }
+            }
+
+            function updateCalc() {
+                const { r, dr, L } = params;
+                const circ = 2 * Math.PI * r;
+                const dv = circ * dr * L;
+
+                document.getElementById('r-val').textContent = r.toFixed(1);
+                document.getElementById('dr-val').textContent = dr.toFixed(2);
+                document.getElementById('l-val').textContent = L.toFixed(1);
+                document.getElementById('calc-r').textContent = r.toFixed(1);
+                document.getElementById('calc-circ').textContent = circ.toFixed(2);
+                document.getElementById('calc-dr').textContent = dr.toFixed(2);
+                document.getElementById('calc-l').textContent = L.toFixed(1);
+                document.getElementById('calc-dv').textContent = dv.toFixed(2);
+            }
+
+            document.getElementById('radius-slider').addEventListener('input', e => {
+                params.r = parseFloat(e.target.value); createShell(); updateCalc();
+            });
+            document.getElementById('thickness-slider').addEventListener('input', e => {
+                params.dr = parseFloat(e.target.value); createShell(); updateCalc();
+            });
+            document.getElementById('length-slider').addEventListener('input', e => {
+                params.L = parseFloat(e.target.value); createShell(); updateCalc();
+            });
+            document.getElementById('unroll-btn').addEventListener('click', () => {
+                isUnrolled = !isUnrolled;
+                document.getElementById('unroll-btn').textContent = isUnrolled ?
+                    'Roll Back (Cylinder View)' : 'Unroll Shell (Paper-Towel View)';
+                createShell();
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                if (controls) controls.update();
+                renderer.render(scene, camera);
+            }
+
+            window.addEventListener('resize', () => {
+                const s = getSize();
+                camera.aspect = s.w / s.h;
+                camera.updateProjectionMatrix();
+                renderer.setSize(s.w, s.h);
+            });
+
             createShell();
             updateCalc();
-        });
-        document.getElementById('thickness-slider').addEventListener('input', (e) => {
-            params.dr = parseFloat(e.target.value);
-            createShell();
-            updateCalc();
-        });
-        document.getElementById('length-slider').addEventListener('input', (e) => {
-            params.L = parseFloat(e.target.value);
-            createShell();
-            updateCalc();
-        });
+            animate();
 
-        // Unroll button
-        document.getElementById('unroll-btn').addEventListener('click', () => {
-            isUnrolled = !isUnrolled;
-            targetUnroll = isUnrolled ? 1 : 0;
-            document.getElementById('unroll-btn').textContent = isUnrolled ? 
-                'Roll it back (Cylinder View)' : 'Unroll the Shell (Paper Towel View)';
-            
-            // For simplicity, just snap to the view
-            unrollProgress = targetUnroll;
-            createShell();
-        });
-
-        // Animation
-        function animate() {
-            requestAnimationFrame(animate);
-            controls.update();
-            renderer.render(scene, camera);
+        } catch (err) {
+            showError(err.message);
+            console.error(err);
         }
-
-        // Resize
-        window.addEventListener('resize', () => {
-            camera.aspect = wrapper.clientWidth / wrapper.clientHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(wrapper.clientWidth, wrapper.clientHeight);
-        });
-
-        // Init
-        createShell();
-        updateCalc();
-        animate();
     </script>
 </body>
 </html>
