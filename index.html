@@ -1,330 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Flux through a Cube — Charge at Vertex</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #0a0a15;
-    color: #e4e4e7;
-    overflow: hidden;
-    height: 100vh;
-  }
-  #canvas-wrap { position: fixed; inset: 0; }
-  #info {
-    position: fixed;
-    top: 16px;
-    left: 16px;
-    background: rgba(15, 15, 30, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 16px 20px;
-    border-radius: 12px;
-    max-width: 340px;
-    font-size: 14px;
-    line-height: 1.55;
-  }
-  #info h1 { font-size: 16px; margin-bottom: 10px; color: #fbbf24; }
-  #info .legend { margin-top: 12px; }
-  #info .legend-item { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
-  .swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
-  .swatch.zero { background: rgba(59, 130, 246, 0.55); border: 1px solid #3b82f6; }
-  .swatch.flux { background: rgba(239, 68, 68, 0.55); border: 1px solid #ef4444; }
-  .swatch.charge { background: #fbbf24; border-radius: 50%; box-shadow: 0 0 10px #fbbf24; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Heckerrrrrrr01 — Projects</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%91%8B%3C/text%3E%3C/svg%3E" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #0b1020;
+    }
+    .bg {
+      position: fixed; inset: 0; z-index: -1;
+      background: linear-gradient(120deg, #0f172a, #1e1b4b, #312e81, #0f172a);
+      background-size: 400% 400%;
+      animation: shift 18s ease infinite;
+    }
+    @keyframes shift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
 
-  #controls {
-    position: fixed;
-    bottom: 16px;
-    left: 16px;
-    background: rgba(15, 15, 30, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 14px 18px;
-    border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    font-size: 13px;
-  }
-  .toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    user-select: none;
-  }
-  .toggle input { cursor: pointer; }
+    main {
+      flex: 1;
+      width: 100%;
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 60px 20px 40px;
+    }
 
-  #formula {
-    position: fixed;
-    top: 16px;
-    right: 16px;
-    background: rgba(15, 15, 30, 0.85);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 16px 20px;
-    border-radius: 12px;
-    font-size: 13px;
-    min-width: 240px;
-  }
-  #formula h2 { font-size: 14px; color: #a78bfa; margin-bottom: 10px; }
-  .eq { margin: 8px 0; padding: 6px 10px; background: rgba(255,255,255,0.04); border-radius: 6px; font-family: ui-monospace, "SF Mono", monospace; }
-  .hint { font-size: 11px; color: #9ca3af; margin-top: 10px; font-style: italic; }
-</style>
+    header {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+    h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0 0 10px;
+      background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .tagline {
+      color: #94a3b8;
+      font-size: 1.05rem;
+      margin: 0;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(99, 102, 241, 0.08));
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 12px 40px rgba(99, 102, 241, 0.2);
+    }
+    .card:hover::before { opacity: 1; }
+
+    .card .emoji {
+      font-size: 2.2rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+    .card h2 {
+      font-size: 1.2rem;
+      margin: 0 0 8px;
+      font-weight: 700;
+    }
+    .card p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    .card .tag {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(99, 102, 241, 0.18);
+      color: #a5b4fc;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .card .tag.featured {
+      background: rgba(244, 114, 182, 0.18);
+      color: #f9a8d4;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #475569;
+      font-size: 0.85rem;
+    }
+    footer a { color: #64748b; text-decoration: none; }
+    footer a:hover { color: #cbd5e1; }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 2rem; }
+      main { padding: 40px 16px 30px; }
+    }
+  </style>
 </head>
 <body>
-<div id="canvas-wrap"></div>
+  <div class="bg"></div>
 
-<div id="info">
-  <h1>⚡ Flux through a Cube</h1>
-  Point charge <b>q</b> at one <b>vertex</b> of the cube.
-  <div class="legend">
-    <div class="legend-item"><span class="swatch charge"></span> Point charge q</div>
-    <div class="legend-item"><span class="swatch zero"></span> Adjacent faces (Φ = 0)</div>
-    <div class="legend-item"><span class="swatch flux"></span> Far faces (Φ = q/24ε₀)</div>
-  </div>
-  <p class="hint" style="margin-top:12px">🖱️ Drag to rotate · Scroll to zoom</p>
-</div>
+  <main>
+    <header>
+      <h1>👋 hellooo, world</h1>
+      <p class="tagline">A little corner of the internet for things I make.</p>
+    </header>
 
-<div id="formula">
-  <h2>📐 Gauss's Law Result</h2>
-  <div class="eq">Φ_total = q / 8ε₀</div>
-  <div class="eq">Φ_adjacent = <b>0</b> (×3 faces)</div>
-  <div class="eq">Φ_far = <b>q/24ε₀</b> (×3 faces)</div>
-  <p class="hint">The trick: 8 such cubes sharing the vertex = one big cube with q at its center.</p>
-</div>
+    <div class="grid">
+      <a class="card" href="tic-tac-toe-online/">
+        <span class="emoji">🎮</span>
+        <h2>Tic Tac Toe Online</h2>
+        <p>Multiplayer tic-tac-toe over WebRTC. Create a room, share the link, play with a friend anywhere.</p>
+        <span class="tag featured">★ New</span>
+      </a>
 
-<div id="controls">
-  <label class="toggle"><input type="checkbox" id="toggleFaces" checked> Show colored faces</label>
-  <label class="toggle"><input type="checkbox" id="toggleField" checked> Show field lines</label>
-  <label class="toggle"><input type="checkbox" id="toggleBigCube"> Show 8-cube arrangement</label>
-  <label class="toggle"><input type="checkbox" id="toggleLabels" checked> Show labels</label>
-</div>
+      <a class="card" href="flux-cube/">
+        <span class="emoji">⚡</span>
+        <h2>Flux through a Cube</h2>
+        <p>Interactive 3D visualization of Gauss's law for a point charge at a cube's vertex.</p>
+        <span class="tag">Physics · 3D</span>
+      </a>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-  }
-}
-</script>
+      <a class="card" href="cylindrical-shell-viz/">
+        <span class="emoji">🌀</span>
+        <h2>Cylindrical Shell</h2>
+        <p>Visualization of a cylindrical Gaussian shell.</p>
+        <span class="tag">Physics · 3D</span>
+      </a>
+    </div>
+  </main>
 
-<script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-// ---------- SETUP ----------
-const wrap = document.getElementById('canvas-wrap');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0a0a15);
-
-const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 1000);
-camera.position.set(5, 4, 6);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(devicePixelRatio);
-wrap.appendChild(renderer.domElement);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.target.set(1, 1, 1);
-
-// Lights
-scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-const dir = new THREE.DirectionalLight(0xffffff, 0.8);
-dir.position.set(5, 10, 7);
-scene.add(dir);
-
-// ---------- CUBE (side 2, charge at origin vertex) ----------
-const SIDE = 2;
-const groups = {
-  faces: new THREE.Group(),
-  field: new THREE.Group(),
-  bigCube: new THREE.Group(),
-  labels: new THREE.Group()
-};
-Object.values(groups).forEach(g => scene.add(g));
-
-// Cube wireframe
-const cubeGeo = new THREE.BoxGeometry(SIDE, SIDE, SIDE);
-const edges = new THREE.EdgesGeometry(cubeGeo);
-const cubeEdges = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color: 0xffffff, linewidth: 2 }));
-cubeEdges.position.set(SIDE/2, SIDE/2, SIDE/2);
-scene.add(cubeEdges);
-
-// Colored face planes
-// 3 adjacent faces (touching origin): x=0, y=0, z=0 planes
-// 3 far faces: x=SIDE, y=SIDE, z=SIDE planes
-const adjMat = new THREE.MeshBasicMaterial({
-  color: 0x3b82f6, transparent: true, opacity: 0.35, side: THREE.DoubleSide
-});
-const farMat = new THREE.MeshBasicMaterial({
-  color: 0xef4444, transparent: true, opacity: 0.35, side: THREE.DoubleSide
-});
-
-function addFace(mat, pos, rot) {
-  const g = new THREE.PlaneGeometry(SIDE, SIDE);
-  const m = new THREE.Mesh(g, mat);
-  m.position.copy(pos);
-  m.rotation.copy(rot);
-  groups.faces.add(m);
-}
-
-const half = SIDE / 2;
-// Adjacent (at the charge side)
-addFace(adjMat, new THREE.Vector3(0, half, half), new THREE.Euler(0, Math.PI/2, 0));   // x=0
-addFace(adjMat, new THREE.Vector3(half, 0, half), new THREE.Euler(Math.PI/2, 0, 0));    // y=0
-addFace(adjMat, new THREE.Vector3(half, half, 0), new THREE.Euler(0, 0, 0));            // z=0
-// Far faces
-addFace(farMat, new THREE.Vector3(SIDE, half, half), new THREE.Euler(0, Math.PI/2, 0)); // x=SIDE
-addFace(farMat, new THREE.Vector3(half, SIDE, half), new THREE.Euler(Math.PI/2, 0, 0)); // y=SIDE
-addFace(farMat, new THREE.Vector3(half, half, SIDE), new THREE.Euler(0, 0, 0));         // z=SIDE
-
-// ---------- CHARGE (glowing sphere at origin) ----------
-const charge = new THREE.Mesh(
-  new THREE.SphereGeometry(0.12, 32, 32),
-  new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
-);
-charge.position.set(0, 0, 0);
-scene.add(charge);
-
-// Glow halo
-const glow = new THREE.Mesh(
-  new THREE.SphereGeometry(0.25, 32, 32),
-  new THREE.MeshBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.25 })
-);
-scene.add(glow);
-
-// ---------- FIELD LINES (radial from charge) ----------
-// Only draw lines that go INTO the cube's octant (positive x, y, z)
-function buildFieldLines() {
-  const N = 14; // lines per direction-layer
-  const LEN = 3.5;
-  for (let i = 0; i < N; i++) {
-    for (let j = 0; j < N; j++) {
-      // Sample directions in the positive octant (theta, phi)
-      const u = (i + 0.5) / N;
-      const v = (j + 0.5) / N;
-      const theta = u * Math.PI / 2;  // 0 to pi/2
-      const phi   = v * Math.PI / 2;  // 0 to pi/2
-      const dx = Math.sin(theta) * Math.cos(phi);
-      const dy = Math.cos(theta);
-      const dz = Math.sin(theta) * Math.sin(phi);
-
-      const pts = [];
-      pts.push(new THREE.Vector3(0, 0, 0));
-      pts.push(new THREE.Vector3(dx * LEN, dy * LEN, dz * LEN));
-
-      // Color: bluer near adjacent faces, redder as lines pierce far faces
-      const color = new THREE.Color().setHSL(0.08 + 0.55 * (1 - dy), 0.9, 0.55);
-
-      const geo = new THREE.BufferGeometry().setFromPoints(pts);
-      const mat = new THREE.LineBasicMaterial({
-        color, transparent: true, opacity: 0.55
-      });
-      groups.field.add(new THREE.Line(geo, mat));
-    }
-  }
-}
-buildFieldLines();
-
-// ---------- 8-CUBE ARRANGEMENT (shown on toggle) ----------
-function buildBigCube() {
-  // 7 additional cubes (one already present) — showing octants around charge at origin
-  const offsets = [
-    [-SIDE, 0, 0], [0, -SIDE, 0], [0, 0, -SIDE],
-    [-SIDE, -SIDE, 0], [-SIDE, 0, -SIDE], [0, -SIDE, -SIDE],
-    [-SIDE, -SIDE, -SIDE]
-  ];
-  const mat = new THREE.LineBasicMaterial({ color: 0xa78bfa, transparent: true, opacity: 0.4 });
-  offsets.forEach(([ox, oy, oz]) => {
-    const g = new THREE.EdgesGeometry(new THREE.BoxGeometry(SIDE, SIDE, SIDE));
-    const l = new THREE.LineSegments(g, mat);
-    l.position.set(ox + SIDE/2, oy + SIDE/2, oz + SIDE/2);
-    groups.bigCube.add(l);
-  });
-  // Big cube outline
-  const bigGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(SIDE*2, SIDE*2, SIDE*2));
-  const bigMat = new THREE.LineBasicMaterial({ color: 0xfbbf24, linewidth: 2, transparent: true, opacity: 0.8 });
-  const bigLine = new THREE.LineSegments(bigGeo, bigMat);
-  bigLine.position.set(0, 0, 0);
-  groups.bigCube.add(bigLine);
-}
-buildBigCube();
-groups.bigCube.visible = false;
-
-// ---------- TEXT LABELS (sprites) ----------
-function makeLabel(text, color = '#ffffff') {
-  const canvas = document.createElement('canvas');
-  canvas.width = 256; canvas.height = 96;
-  const ctx = canvas.getContext('2d');
-  ctx.fillStyle = 'rgba(10,10,21,0.85)';
-  ctx.fillRect(0, 0, 256, 96);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 3;
-  ctx.strokeRect(1.5, 1.5, 253, 93);
-  ctx.fillStyle = color;
-  ctx.font = 'bold 28px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(text, 128, 48);
-  const tex = new THREE.CanvasTexture(canvas);
-  const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true }));
-  sprite.scale.set(0.9, 0.34, 1);
-  return sprite;
-}
-
-// charge label
-const cLabel = makeLabel('q', '#fbbf24');
-cLabel.position.set(-0.4, -0.1, -0.1);
-groups.labels.add(cLabel);
-
-// Φ=0 labels on 3 adjacent faces
-const adj0a = makeLabel('Φ = 0', '#3b82f6'); adj0a.position.set(0, half, half); groups.labels.add(adj0a);
-const adj0b = makeLabel('Φ = 0', '#3b82f6'); adj0b.position.set(half, 0, half); groups.labels.add(adj0b);
-const adj0c = makeLabel('Φ = 0', '#3b82f6'); adj0c.position.set(half, half, 0); groups.labels.add(adj0c);
-
-// Φ=q/24ε₀ labels on 3 far faces
-const far0a = makeLabel('q/24ε₀', '#ef4444'); far0a.position.set(SIDE + 0.3, half, half); groups.labels.add(far0a);
-const far0b = makeLabel('q/24ε₀', '#ef4444'); far0b.position.set(half, SIDE + 0.3, half); groups.labels.add(far0b);
-const far0c = makeLabel('q/24ε₀', '#ef4444'); far0c.position.set(half, half, SIDE + 0.3); groups.labels.add(far0c);
-
-// ---------- TOGGLES ----------
-document.getElementById('toggleFaces').addEventListener('change', e => groups.faces.visible = e.target.checked);
-document.getElementById('toggleField').addEventListener('change', e => groups.field.visible = e.target.checked);
-document.getElementById('toggleBigCube').addEventListener('change', e => {
-  groups.bigCube.visible = e.target.checked;
-  if (e.target.checked) {
-    controls.target.set(0, 0, 0);
-    camera.position.set(7, 6, 9);
-  } else {
-    controls.target.set(1, 1, 1);
-  }
-});
-document.getElementById('toggleLabels').addEventListener('change', e => groups.labels.visible = e.target.checked);
-
-// ---------- ANIMATE ----------
-let t = 0;
-function animate() {
-  requestAnimationFrame(animate);
-  t += 0.01;
-  // Pulse charge glow
-  const s = 1 + 0.15 * Math.sin(t * 3);
-  glow.scale.setScalar(s);
-  controls.update();
-  renderer.render(scene, camera);
-}
-animate();
-
-addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-});
-</script>
+  <footer>
+    <a href="https://github.com/Heckerrrrrrr01/hellooo-world">View on GitHub</a>
+  </footer>
 </body>
 </html>
