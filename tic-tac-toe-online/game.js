@@ -73,8 +73,34 @@
   }
 
   function newPeer(id) {
-    // Use PeerJS public broker (no setup required).
-    return id ? new Peer(id) : new Peer();
+    const config = {
+      config: {
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          { urls: 'stun:global.stun.twilio.com:3478' },
+          // Free TURN servers for when STUN fails (different networks/NAT)
+          {
+            urls: 'turn:openrelay.metered.ca:80',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          },
+          {
+            urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+            username: 'openrelayproject',
+            credential: 'openrelayproject'
+          }
+        ]
+      },
+      debug: 0
+    };
+    return id ? new Peer(id, config) : new Peer(config);
   }
 
   function send(msg) {
