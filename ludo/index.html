@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ludo — Play Online or with Friends</title>
+  <meta name="description" content="A full Ludo game with single-player vs bots, local pass-and-play, and online multiplayer over WebRTC. No sign-up." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="bg"></div>
+
+  <main class="app">
+    <!-- ============ HOME / MENU ============ -->
+    <section id="screen-menu" class="screen active">
+      <header class="menu-header">
+        <h1 class="logo">
+          <span class="dice">🎲</span>
+          <span class="title">Ludo</span>
+        </h1>
+        <p class="tagline">Roll the dice. Race your tokens home. First to finish wins.</p>
+      </header>
+
+      <div class="menu-card">
+        <h2>Choose a mode</h2>
+
+        <button class="mode-btn" data-mode="solo">
+          <span class="mode-emoji">🤖</span>
+          <span class="mode-text">
+            <strong>Single Player</strong>
+            <small>Play against 3 bots on this device</small>
+          </span>
+        </button>
+
+        <button class="mode-btn" data-mode="local">
+          <span class="mode-emoji">👫</span>
+          <span class="mode-text">
+            <strong>Pass &amp; Play</strong>
+            <small>2–4 players sharing one device</small>
+          </span>
+        </button>
+
+        <button class="mode-btn" data-mode="online-create">
+          <span class="mode-emoji">🌐</span>
+          <span class="mode-text">
+            <strong>Create Online Room</strong>
+            <small>Invite friends with a link or code</small>
+          </span>
+        </button>
+
+        <button class="mode-btn" data-mode="online-join">
+          <span class="mode-emoji">🔗</span>
+          <span class="mode-text">
+            <strong>Join Online Room</strong>
+            <small>Enter a room code to play</small>
+          </span>
+        </button>
+      </div>
+
+      <a class="back-link" href="../">← back to projects</a>
+    </section>
+
+    <!-- ============ SETUP (solo / local) ============ -->
+    <section id="screen-setup" class="screen">
+      <div class="menu-card">
+        <h2 id="setup-title">Set up players</h2>
+        <p class="muted" id="setup-subtitle">Choose how many seats and pick your colors.</p>
+
+        <div class="player-count">
+          <button class="count-btn" data-count="2">2</button>
+          <button class="count-btn active" data-count="3">3</button>
+          <button class="count-btn" data-count="4">4</button>
+          <span class="count-label">players</span>
+        </div>
+
+        <div class="seat-list" id="seat-list"></div>
+
+        <div class="row-actions">
+          <button class="btn btn-ghost" id="btn-setup-back">Back</button>
+          <button class="btn btn-primary" id="btn-setup-start">Start Game</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ONLINE LOBBY (host) ============ -->
+    <section id="screen-host" class="screen">
+      <div class="menu-card">
+        <h2>Online Room</h2>
+        <p class="muted">Share the code or link. Up to 4 players. Empty seats can be filled with bots.</p>
+
+        <label class="field">
+          <span>Your name</span>
+          <input id="host-name" type="text" maxlength="14" placeholder="Host" autocomplete="off" />
+        </label>
+
+        <div class="share-box">
+          <input id="room-code" type="text" readonly placeholder="creating…" />
+          <button id="btn-copy-code" class="btn btn-secondary">Copy code</button>
+        </div>
+        <div class="share-box">
+          <input id="share-link" type="text" readonly placeholder="creating…" />
+          <button id="btn-copy-link" class="btn btn-secondary">Copy link</button>
+        </div>
+
+        <h3 class="lobby-title">Seats</h3>
+        <div class="lobby-seats" id="lobby-seats"></div>
+
+        <div class="row-actions">
+          <button class="btn btn-ghost" id="btn-host-cancel">Cancel</button>
+          <button class="btn btn-primary" id="btn-host-start" disabled>Start Game</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ ONLINE JOIN ============ -->
+    <section id="screen-join" class="screen">
+      <div class="menu-card">
+        <h2>Join Room</h2>
+        <p class="muted" id="join-msg">Enter the room code and your name.</p>
+
+        <label class="field">
+          <span>Room code</span>
+          <input id="join-code" type="text" placeholder="e.g. 84F2A1" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Your name</span>
+          <input id="join-name" type="text" maxlength="14" placeholder="e.g. Sam" autocomplete="off" />
+        </label>
+
+        <h3 class="lobby-title" id="join-lobby-title" style="display:none;">Seats</h3>
+        <div class="lobby-seats" id="join-lobby-seats"></div>
+
+        <div class="row-actions">
+          <button class="btn btn-ghost" id="btn-join-cancel">Back</button>
+          <button class="btn btn-primary" id="btn-join-go">Join</button>
+        </div>
+
+        <div class="loader" id="join-loader" hidden><div></div><div></div><div></div></div>
+      </div>
+    </section>
+
+    <!-- ============ GAME ============ -->
+    <section id="screen-game" class="screen">
+      <div class="game-shell">
+        <aside class="side-panel left-panel">
+          <div class="player-card" data-color="red">
+            <span class="dot red"></span>
+            <span class="pname">Red</span>
+            <span class="phome">0/4</span>
+          </div>
+          <div class="player-card" data-color="green">
+            <span class="dot green"></span>
+            <span class="pname">Green</span>
+            <span class="phome">0/4</span>
+          </div>
+          <div class="player-card" data-color="yellow">
+            <span class="dot yellow"></span>
+            <span class="pname">Yellow</span>
+            <span class="phome">0/4</span>
+          </div>
+          <div class="player-card" data-color="blue">
+            <span class="dot blue"></span>
+            <span class="pname">Blue</span>
+            <span class="phome">0/4</span>
+          </div>
+        </aside>
+
+        <div class="board-wrap">
+          <div class="board" id="board"></div>
+        </div>
+
+        <aside class="side-panel right-panel">
+          <div class="turn-display" id="turn-display">
+            <div class="turn-label">Turn</div>
+            <div class="turn-name" id="turn-name">—</div>
+          </div>
+
+          <div class="dice-area">
+            <button class="dice" id="dice" aria-label="Roll dice">
+              <div class="face" data-face="1"><span></span></div>
+              <div class="face" data-face="2"><span></span><span></span></div>
+              <div class="face" data-face="3"><span></span><span></span><span></span></div>
+              <div class="face" data-face="4"><span></span><span></span><span></span><span></span></div>
+              <div class="face" data-face="5"><span></span><span></span><span></span><span></span><span></span></div>
+              <div class="face" data-face="6"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+            </button>
+            <div class="dice-hint" id="dice-hint">Click to roll</div>
+          </div>
+
+          <div class="game-log" id="game-log"></div>
+
+          <div class="game-actions">
+            <button class="btn btn-ghost" id="btn-leave">Leave</button>
+          </div>
+
+          <div class="conn-status" id="conn-status" hidden></div>
+        </aside>
+      </div>
+
+      <!-- mobile bottom bar mirrors right-panel essentials -->
+      <div class="mobile-bar">
+        <div class="mb-turn" id="mb-turn">—</div>
+        <button class="dice mb-dice" id="mb-dice" aria-label="Roll dice">
+          <div class="face" data-face="1"><span></span></div>
+          <div class="face" data-face="2"><span></span><span></span></div>
+          <div class="face" data-face="3"><span></span><span></span><span></span></div>
+          <div class="face" data-face="4"><span></span><span></span><span></span><span></span></div>
+          <div class="face" data-face="5"><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="face" data-face="6"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ WIN ============ -->
+    <section id="screen-win" class="screen">
+      <div class="menu-card win-card">
+        <div class="trophy">🏆</div>
+        <h2 id="win-title">Red wins!</h2>
+        <p class="muted" id="win-sub">First to bring all 4 tokens home.</p>
+        <div class="row-actions">
+          <button class="btn btn-primary" id="btn-rematch">Play again</button>
+          <button class="btn btn-ghost" id="btn-home">Main menu</button>
+        </div>
+      </div>
+      <canvas id="confetti"></canvas>
+    </section>
+
+    <div id="toast" class="toast"></div>
+  </main>
+
+  <footer class="footer">
+    <span>Built with WebRTC · No sign-up · No tracking</span>
+  </footer>
+
+  <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/multiplayer.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
